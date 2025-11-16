@@ -9,7 +9,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// import { ReactQueryDevtools } from '@tanstack/react-query-devtools'; 
+// import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 import "./styles/main.css";
 // Lib imports
@@ -69,18 +69,22 @@ function UserListRoute() {
   return <UserList />;
 }
 
-// Main App Component 
+/**
+ * Helper component for protected routes
+ * Moved outside PhotoShare to fix lint error
+ */
+function AdvancedRoute({ element }) {
+  const { advancedFeatures } = useAppStore();
+  if (!advancedFeatures) {
+    return <Navigate to="/" />;
+  }
+  return element;
+}
+
+// Main App Component
 
 function PhotoShare() {
-  const { loggedInUser, advancedFeatures } = useAppStore();
-
-  // Helper function for protected routes 
-  const AdvancedRoute = ({ element }) => {
-    if (!advancedFeatures) {
-      return <Navigate to="/" />;
-    }
-    return element;
-  };
+  const { loggedInUser } = useAppStore();
 
   return (
     <BrowserRouter basename="/photo-share.html">
@@ -110,17 +114,19 @@ function PhotoShare() {
                   <Route path="/users/:userId" element={<UserDetailRoute />} />
                   <Route path="/photos/:userId" element={<UserPhotosRoute />} />
                   <Route path="/photos/new" element={<PhotoUpload />} />
-                  
+
                   {/* Advanced Feature Routes */}
                   <Route
                     path="/photos/:userId/:photoId"
                     element={<AdvancedRoute element={<SinglePhotoRoute />} />}
+                    // Remove the extra '}' that was here
                   />
                   <Route
                     path="/commentsOfUser/:userId"
                     element={<AdvancedRoute element={<CommentsOfUserRoute />} />}
+                    // Remove the extra '}' that was here
                   />
-                  
+
                   {/* Fallback: redirect to home */}
                   <Route path="*" element={<Navigate to="/" />} />
                 </>

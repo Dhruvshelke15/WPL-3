@@ -10,7 +10,7 @@ import mongoose from "mongoose";
 import bluebird from "bluebird";
 import express from "express";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { dirname } from "path"; // Removed 'join'
 // proj3 imports
 import session from "express-session";
 import multer from "multer";
@@ -60,7 +60,7 @@ const checkLoggedIn = (request, response, next) => {
   if (!request.session.user) {
     return response.status(401).send("Unauthorized: Not logged in");
   }
-  next();
+  return next(); // Added 'return'
 };
 
 // Configure Multer for file uploads
@@ -128,18 +128,22 @@ app.post("/admin/login", async (request, response) => {
  * URL /admin/logout - Logout user
  * Clears session.
  */
+/**
+ * URL /admin/logout - Logout user
+ * Clears session.
+ */
 app.post("/admin/logout", (request, response) => {
   if (!request.session.user) {
     // Test expects 400 if not logged in
-    return response.status(400).send("Not logged in");
+    response.status(400).send("Not logged in"); // <-- 'return' removed
+  } else { // <-- 'else' block added
+    request.session.destroy((err) => {
+      if (err) {
+        return response.status(500).send("Logout failed");
+      }
+      return response.status(200).send("Logged out");
+    });
   }
-
-  request.session.destroy((err) => {
-    if (err) {
-      return response.status(500).send("Logout failed");
-    }
-    return response.status(200).send("Logged out");
-  });
 });
 
 /**
@@ -173,7 +177,7 @@ app.post("/user", async (request, response) => {
     // Create new user
     const newUser = await User.create({
       login_name,
-      password, // storing plain text 
+      password, // storing plain text
       first_name,
       last_name,
       location: location || "",
@@ -368,9 +372,9 @@ app.get("/photosOfUser/:id", checkLoggedIn, async (request, response) => {
     }
     const userIds = new Set();
     photos.forEach((photo) => {
-      if (photo.comments) { 
+      if (photo.comments) {
         photo.comments.forEach((comment) => {
-          if (comment.user_id) { 
+          if (comment.user_id) {
             userIds.add(comment.user_id.toString());
           }
         });
@@ -388,7 +392,7 @@ app.get("/photosOfUser/:id", checkLoggedIn, async (request, response) => {
         photo.comments.forEach((comment) => {
           if (comment.user_id) {
             comment.user = userMap[comment.user_id.toString()];
-            delete comment.user_id; 
+            delete comment.user_id;
           }
         });
         photo.comments.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
@@ -399,7 +403,7 @@ app.get("/photosOfUser/:id", checkLoggedIn, async (request, response) => {
     photos.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
     return response.status(200).send(photos);
   } catch (err) {
-    console.error("Error in /photosOfUser/:id :", err); 
+    console.error("Error in /photosOfUser/:id :", err);
     return response.status(500).send(err.message);
   }
 });
