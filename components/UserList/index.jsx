@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from "react";
-// eslint-disable-next-line import/no-extraneous-dependencies
-import PropTypes from "prop-types";
+import React from "react";
 import {
   List,
   ListItemButton,
@@ -8,41 +6,31 @@ import {
   Typography,
   Chip,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import * as api from "../../lib/api";
+import { useAppStore } from "../../lib/store";
 
 import "./styles.css";
 
-function UserList({ advancedFeatures }) {
-  const [users, setUsers] = useState([]);
+function UserList() {
+  const advancedFeatures = useAppStore((state) => state.advancedFeatures);
 
-  useEffect(() => {
-    const fetchUserList = () => {
-      // *** FIX 1: Send query param to server ***
-      // If advancedFeatures is on, ask the server for the counts
-      const url = advancedFeatures
-        ? "http://localhost:3001/user/list?advanced=true"
-        : "http://localhost:3001/user/list";
+  // Fetch user list using React Query
+  const { data: users, isLoading, isError, error } = useQuery({
+    queryKey: ['users', advancedFeatures], // Re-run query if advancedFeatures changes
+    queryFn: () => api.fetchUserList(advancedFeatures),
+  });
 
-      axios
-        .get(url)
-        .then((response) => {
-          setUsers(response.data);
-        })
-        .catch((error) => {
-          console.error("Error fetching user list:", error);
-        });
-    };
+  if (isLoading) {
+    return <CircularProgress />;
+  }
 
-    fetchUserList();
-    const intervalId = setInterval(fetchUserList, 10000); 
-
-    return () => clearInterval(intervalId);
-    
-  // *** FIX 2: Add advancedFeatures as a dependency ***
-  // This tells React to re-run the effect (and fetch new data) when the toggle changes
-  }, [advancedFeatures]); 
+  if (isError) {
+    return <Typography color="error">Error fetching users: {error.message}</Typography>;
+  }
 
   return (
     <div>
@@ -50,9 +38,8 @@ function UserList({ advancedFeatures }) {
         Users
       </Typography>
       <List component="nav">
-        {users.map((user) => (
+        {users && users.map((user) => (
           <React.Fragment key={user._id}>
-            {/* *** FIX 3: Add bubble logic back and fix <a> in <a> warning *** */}
             <ListItemButton
               component={Link}
               to={`/users/${user._id}`}
@@ -65,21 +52,19 @@ function UserList({ advancedFeatures }) {
               {advancedFeatures && (
                 <Box sx={{ display: "flex", gap: 0.5, zIndex: 1 }}>
                   <Chip
-                    // This will now work, but only when advancedFeatures is true
-                    label={user.photoCount} 
+                    label={user.photoCount}
                     color="success"
                     size="small"
                     title={`${user.photoCount} photos`}
                   />
                   <Chip
-                    // This will now work, but only when advancedFeatures is true
-                    label={user.commentCount} 
+                    label={user.commentCount}
                     color="error"
                     size="small"
                     title={`${user.commentCount} comments`}
                     component={Link}
                     to={`/commentsOfUser/${user._id}`}
-                    onClick={(e) => e.stopPropagation()} // Prevents navigating to user detail
+                    onClick={(e) => e.stopPropagation()}
                     clickable
                   />
                 </Box>
@@ -91,9 +76,5 @@ function UserList({ advancedFeatures }) {
     </div>
   );
 }
-
-UserList.propTypes = {
-  advancedFeatures: PropTypes.bool.isRequired,
-};
 
 export default UserList;

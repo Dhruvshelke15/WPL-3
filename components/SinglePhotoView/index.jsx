@@ -12,80 +12,64 @@ import {
   Grid,
   Box,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import * as api from "../../lib/api";
+import { useAppStore } from "../../lib/store";
+import AddComment from "../AddComment"; 
+
 import "./styles.css";
 
-// Helper function to format date/time strings (from UserPhotos)
+// Helper function
 function formatDateTime(isoString) {
   if (!isoString) return "Unknown date";
-  try {
-    return new Date(isoString).toLocaleString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch (error) {
-    console.warn(`Could not parse date: ${isoString}`);
-    return isoString;
-  }
+  return new Date(isoString).toLocaleString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
 }
 
-function SinglePhotoView({ setAppContext }) {
+function SinglePhotoView() {
   const { userId, photoId } = useParams();
   const navigate = useNavigate();
+  const setAppContext = useAppStore((state) => state.setAppContext);
 
-  const [photos, setPhotos] = useState([]);
-  const [user, setUser] = useState(null);
-  const [currentPhoto, setCurrentPhoto] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(-1);
 
-  // Effect to fetch user details (for the name in TopBar)
-  useEffect(() => {
-    axios
-      .get(`http://localhost:3001/user/${userId}`)
-      .then((response) => {
-        const userData = response.data;
-        setUser(userData);
-      })
-      .catch((error) => {
-        console.error(`Error fetching user details ${userId}:`, error);
-      });
-  }, [userId]);
+  // Fetch user data
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: () => api.fetchUser(userId),
+  });
 
-  // Effect to fetch all photos for the user
-  useEffect(() => {
-    axios
-      .get(`http://localhost:3001/photosOfUser/${userId}`)
-      .then((response) => {
-        setPhotos(response.data);
-      })
-      .catch((error) => {
-        console.error(`Error fetching photos for ${userId}:`, error);
-        setPhotos([]);
-      });
-  }, [userId]);
+  // Fetch photos data
+  const { data: photos, isLoading: photosLoading } = useQuery({
+    queryKey: ['photosOfUser', userId],
+    queryFn: () => api.fetchPhotosOfUser(userId),
+  });
 
-  // Effect to find the current photo and index when photos or photoId change
+  // Effect to find the current photo and index
   useEffect(() => {
-    if (photos.length > 0) {
+    if (photos && photos.length > 0) {
       const index = photos.findIndex((p) => p._id === photoId);
       if (index !== -1) {
         setCurrentIndex(index);
-        setCurrentPhoto(photos[index]);
         if (user) {
           setAppContext(`Photo ${index + 1} of ${photos.length} by ${user.first_name} ${user.last_name}`);
         }
       } else {
-        // If photoId is invalid, navigate back to user details
-        navigate(`/users/${userId}`);
+        navigate(`/users/${userId}`); // Invalid photoId
       }
     }
   }, [photos, photoId, user, setAppContext, navigate, userId]);
 
+  if (userLoading || photosLoading || currentIndex === -1) {
+    return <CircularProgress />;
+  }
+  
+  const currentPhoto = photos[currentIndex];
   if (!currentPhoto || !user) {
     return <Typography>Loading photo...</Typography>;
   }
@@ -107,26 +91,14 @@ function SinglePhotoView({ setAppContext }) {
             style={{ maxHeight: 600, objectFit: "contain" }}
           />
           <CardContent>
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Button
-                variant="contained"
-                onClick={() => handleNavigation(currentIndex - 1)}
-                disabled={currentIndex === 0}
-              >
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Button variant="contained" onClick={() => handleNavigation(currentIndex - 1)} disabled={currentIndex === 0}>
                 Previous
               </Button>
               <Typography variant="caption" color="textSecondary">
                 Posted on: {formatDateTime(currentPhoto.date_time)}
               </Typography>
-              <Button
-                variant="contained"
-                onClick={() => handleNavigation(currentIndex + 1)}
-                disabled={currentIndex === photos.length - 1}
-              >
+              <Button variant="contained" onClick={() => handleNavigation(currentIndex + 1)} disabled={currentIndex === photos.length - 1}>
                 Next
               </Button>
             </Box>
@@ -140,22 +112,17 @@ function SinglePhotoView({ setAppContext }) {
                       <ListItem alignItems="flex-start">
                         <ListItemText
                           primary={<Typography>{comment.comment}</Typography>}
-                          secondary={(
+                          secondary={
                             <>
-                              <Typography
-                                component="span"
-                                variant="body2"
-                                color="textPrimary"
-                              >
+                              <Typography component="span" variant="body2" color="textPrimary">
                                 &mdash;{" "}
                                 <Link to={`/users/${comment.user._id}`}>
-                                  {comment.user.first_name}{" "}
-                                  {comment.user.last_name}
+                                  {comment.user.first_name} {comment.user.last_name}
                                 </Link>
                               </Typography>
                               {` on ${formatDateTime(comment.date_time)}`}
                             </>
-                          )}
+                          }
                         />
                       </ListItem>
                       {index < currentPhoto.comments.length - 1 && <Divider />}
@@ -167,6 +134,8 @@ function SinglePhotoView({ setAppContext }) {
                   </ListItem>
                 )}
               </List>
+              {/* Add Comment Form */}
+              <AddComment photoId={currentPhoto._id} userId={userId} />
             </Box>
           </CardContent>
         </Card>
@@ -174,9 +143,5 @@ function SinglePhotoView({ setAppContext }) {
     </Grid>
   );
 }
-
-SinglePhotoView.propTypes = {
-  setAppContext: PropTypes.func.isRequired,
-};
 
 export default SinglePhotoView;

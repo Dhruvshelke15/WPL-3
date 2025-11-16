@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-// eslint-disable-next-line import/no-extraneous-dependencies
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { Grid, Typography, Paper } from "@mui/material";
 import {
@@ -9,20 +8,29 @@ import {
   useParams,
   Navigate,
 } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// import { ReactQueryDevtools } from '@tanstack/react-query-devtools'; 
 
 import "./styles/main.css";
-// Remove mock setup for Project 2
-// import "./lib/mockSetup.js"; 
+// Lib imports
+import { useAppStore } from "./lib/store";
+// Component imports
 import TopBar from "./components/TopBar";
 import UserDetail from "./components/UserDetail";
 import UserList from "./components/UserList";
 import UserPhotos from "./components/UserPhotos";
-// Import new components
 import SinglePhotoView from "./components/SinglePhotoView";
 import CommentsOfUser from "./components/CommentsOfUser";
+import LoginRegister from "./components/LoginRegister";
+import PhotoUpload from "./components/PhotoUpload";
 
-// Helper component to set context for Home
-function Home({ setAppContext }) {
+// Create a client
+const queryClient = new QueryClient();
+
+// --- Helper Components for Routes ---
+
+function Home() {
+  const setAppContext = useAppStore((state) => state.setAppContext);
   useEffect(() => {
     setAppContext("Home");
   }, [setAppContext]);
@@ -35,125 +43,100 @@ function Home({ setAppContext }) {
   );
 }
 
-// Helper component to pass props and set context for UserDetail
-function UserDetailRoute({ setAppContext }) {
+function UserDetailRoute() {
   const { userId } = useParams();
-  return <UserDetail userId={userId} setAppContext={setAppContext} />;
+  return <UserDetail userId={userId} />;
 }
 
-// Helper component to pass props and set context for UserPhotos
-function UserPhotosRoute({ setAppContext, advancedFeatures }) {
+function UserPhotosRoute() {
   const { userId } = useParams();
-  return (
-    <UserPhotos
-      userId={userId}
-      setAppContext={setAppContext}
-      advancedFeatures={advancedFeatures}
-    />
-  );
+  return <UserPhotos userId={userId} />;
 }
 
-// Helper component for SinglePhotoView
-function SinglePhotoRoute({ setAppContext }) {
-  return <SinglePhotoView setAppContext={setAppContext} />;
+function SinglePhotoRoute() {
+  return <SinglePhotoView />;
 }
 
-// Helper component for CommentsOfUser
-function CommentsOfUserRoute({ setAppContext }) {
-  return <CommentsOfUser setAppContext={setAppContext} />;
+function CommentsOfUserRoute() {
+  return <CommentsOfUser />;
 }
 
-// Helper component to set context for UserList
-function UserListRoute({ setAppContext, advancedFeatures }) {
+function UserListRoute() {
+  const setAppContext = useAppStore((state) => state.setAppContext);
   useEffect(() => {
     setAppContext("User List");
   }, [setAppContext]);
-  return <UserList advancedFeatures={advancedFeatures} />;
+  return <UserList />;
 }
 
+// Main App Component 
+
 function PhotoShare() {
-  const [appContext, setAppContext] = useState("Home");
-  const [advancedFeatures, setAdvancedFeatures] = useState(false);
+  const { loggedInUser, advancedFeatures } = useAppStore();
+
+  // Helper function for protected routes 
+  const AdvancedRoute = ({ element }) => {
+    if (!advancedFeatures) {
+      return <Navigate to="/" />;
+    }
+    return element;
+  };
 
   return (
     <BrowserRouter basename="/photo-share.html">
-      <div>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TopBar
-              appContext={appContext}
-              advancedFeatures={advancedFeatures}
-              setAdvancedFeatures={setAdvancedFeatures}
-            />
-          </Grid>
-          <div className="main-topbar-buffer" />
+      <TopBar />
+      <div className="main-topbar-buffer" />
+      <Grid container spacing={2}>
+        {/* User List only show if logged in */}
+        {loggedInUser && (
           <Grid item sm={3}>
             <Paper className="main-grid-item">
-              <UserListRoute
-                setAppContext={setAppContext}
-                advancedFeatures={advancedFeatures}
-              />
+              <UserListRoute />
             </Paper>
           </Grid>
-          <Grid item sm={9}>
-            <Paper className="main-grid-item">
-              <Routes>
-                <Route
-                  path="/"
-                  element={<Home setAppContext={setAppContext} />}
-                />
-                <Route
-                  path="/users/:userId"
-                  element={<UserDetailRoute setAppContext={setAppContext} />}
-                />
-                <Route
-                  path="/photos/:userId"
-                  element={(
-                    <UserPhotosRoute
-                      setAppContext={setAppContext}
-                      advancedFeatures={advancedFeatures}
-                    />
-                  )}
-                />
-                {/* proj 2 update*/}
-                <Route
-                  path="/photos/:userId/:photoId"
-                  element={
-                    advancedFeatures ? (
-                      <SinglePhotoRoute setAppContext={setAppContext} />
-                    ) : (
-                      <Navigate to="/users" /> // Redirect if advanced features are off
-                    )
-                  }
-                />
-                {/* proj 2 new routes*/}
-                <Route
-                  path="/commentsOfUser/:userId"
-                  element={
-                    advancedFeatures ? (
-                      <CommentsOfUserRoute setAppContext={setAppContext} />
-                    ) : (
-                      <Navigate to="/users" /> // Redirect if advanced features are off
-                    )
-                  }
-                />
-                <Route
-                  path="/users"
-                  element={(
-                    <UserListRoute
-                      setAppContext={setAppContext}
-                      advancedFeatures={advancedFeatures}
-                    />
-                  )}
-                />
-              </Routes>
-            </Paper>
-          </Grid>
+        )}
+
+        {/* Main Content Area */}
+        <Grid item sm={loggedInUser ? 9 : 12}>
+          <Paper className="main-grid-item">
+            <Routes>
+              {!loggedInUser ? (
+                // If NOT logged in, all paths go to LoginRegister
+                <Route path="/*" element={<LoginRegister />} />
+              ) : (
+                // If LOGGED IN, show protected routes
+                <>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/users/:userId" element={<UserDetailRoute />} />
+                  <Route path="/photos/:userId" element={<UserPhotosRoute />} />
+                  <Route path="/photos/new" element={<PhotoUpload />} />
+                  
+                  {/* Advanced Feature Routes */}
+                  <Route
+                    path="/photos/:userId/:photoId"
+                    element={<AdvancedRoute element={<SinglePhotoRoute />} />}
+                  />
+                  <Route
+                    path="/commentsOfUser/:userId"
+                    element={<AdvancedRoute element={<CommentsOfUserRoute />} />}
+                  />
+                  
+                  {/* Fallback: redirect to home */}
+                  <Route path="*" element={<Navigate to="/" />} />
+                </>
+              )}
+            </Routes>
+          </Paper>
         </Grid>
-      </div>
+      </Grid>
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </BrowserRouter>
   );
 }
 
 const root = ReactDOM.createRoot(document.getElementById("photoshareapp"));
-root.render(<PhotoShare />);
+root.render(
+  <QueryClientProvider client={queryClient}>
+    <PhotoShare />
+  </QueryClientProvider>
+);

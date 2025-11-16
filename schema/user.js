@@ -10,6 +10,9 @@ const userSchema = new mongoose.Schema({
   location: String,
   description: String,
   occupation: String,
+  // added new features for login
+  login_name: String,
+  password: { type: String, select: false },
 });
 
 /**
