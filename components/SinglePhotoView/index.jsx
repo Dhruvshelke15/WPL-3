@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
 import {
   Typography,
   Card,
@@ -17,8 +16,8 @@ import {
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as api from "../../lib/api";
-import { useAppStore } from "../../lib/store";
-import AddComment from "../AddComment"; 
+import useAppStore from "../../lib/store";
+import AddComment from "../AddComment";
 
 import "./styles.css";
 
@@ -26,8 +25,12 @@ import "./styles.css";
 function formatDateTime(isoString) {
   if (!isoString) return "Unknown date";
   return new Date(isoString).toLocaleString("en-US", {
-    year: "numeric", month: "long", day: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -112,7 +115,7 @@ function SinglePhotoView() {
                       <ListItem alignItems="flex-start">
                         <ListItemText
                           primary={<Typography>{comment.comment}</Typography>}
-                          secondary={
+                          secondary={( 
                             <>
                               <Typography component="span" variant="body2" color="textPrimary">
                                 &mdash;{" "}
@@ -122,7 +125,7 @@ function SinglePhotoView() {
                               </Typography>
                               {` on ${formatDateTime(comment.date_time)}`}
                             </>
-                          }
+                          )}
                         />
                       </ListItem>
                       {index < currentPhoto.comments.length - 1 && <Divider />}

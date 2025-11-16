@@ -12,20 +12,19 @@ function AddComment({ photoId, userId }) {
     mutationFn: api.addComment,
     onSuccess: () => {
       // Invalidate queries to refetch data
-      // This will update both UserPhotos and SinglePhotoView
       queryClient.invalidateQueries({ queryKey: ['photosOfUser', userId] });
-      queryClient.invalidateQueries({ queryKey: ['photo', photoId] }); // If you create a separate query for single photo
+      queryClient.invalidateQueries({ queryKey: ['photo', photoId] });
       setCommentText(""); // Clear input field
     },
     onError: (error) => {
-      alert(`Failed to add comment: ${error.response?.data || error.message}`);
+      console.error(`Failed to add comment: ${error.response?.data || error.message}`);
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (commentText.trim() === "") {
-      alert("Comment cannot be empty.");
+      console.error("Comment cannot be empty.");
       return;
     }
     addCommentMutation.mutate({ photoId, comment: commentText });

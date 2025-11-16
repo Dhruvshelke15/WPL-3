@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import * as api from "../../lib/api";
-import { useAppStore } from "../../lib/store";
+import useAppStore from "../../lib/store";
 
 function LoginRegister() {
   const login = useAppStore((state) => state.login);
@@ -40,14 +40,13 @@ function LoginRegister() {
     },
     onError: (error) => {
       console.error("Login failed:", error.response?.data || error.message);
-      alert(`Login failed: ${error.response?.data || error.message}`);
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: api.registerUser,
     onSuccess: () => {
-      alert("Registration successful! Please login.");
+      console.log("Registration successful! Please login.");
       setTabIndex(0); // Switch to login tab
       // Clear registration form
       setRegLoginName("");
@@ -61,7 +60,6 @@ function LoginRegister() {
     },
     onError: (error) => {
       console.error("Registration failed:", error.response?.data || error.message);
-      alert(`Registration failed: ${error.response?.data || error.message}`);
     },
   });
 
@@ -75,7 +73,7 @@ function LoginRegister() {
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
     if (regPassword !== regPasswordConfirm) {
-      alert("Passwords do not match!");
+      console.error("Passwords do not match!");
       return;
     }
     registerMutation.mutate({

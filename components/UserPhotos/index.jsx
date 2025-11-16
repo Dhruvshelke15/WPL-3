@@ -16,8 +16,8 @@ import {
 import { Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as api from "../../lib/api";
-import { useAppStore } from "../../lib/store";
-import AddComment from "../AddComment"; 
+import useAppStore from "../../lib/store";
+import AddComment from "../AddComment";
 
 import "./styles.css";
 
@@ -25,8 +25,11 @@ import "./styles.css";
 function formatDateTime(isoString) {
   if (!isoString) return "Unknown date";
   return new Date(isoString).toLocaleString("en-US", {
-    year: "numeric", month: "long", day: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -65,7 +68,6 @@ function UserPhotos({ userId }) {
   // Advanced Features Redirect
   if (advancedFeatures) {
     if (photos && photos.length > 0) {
-      // redirect to the first photo in the stepper view
       return <Navigate to={`/photos/${userId}/${photos[0]._id}`} replace />;
     }
     return <Typography variant="body1">This user has not posted any photos.</Typography>;
@@ -100,7 +102,7 @@ function UserPhotos({ userId }) {
                         <ListItem alignItems="flex-start">
                           <ListItemText
                             primary={<Typography>{comment.comment}</Typography>}
-                            secondary={
+                            secondary={(
                               <>
                                 <Typography component="span" variant="body2" color="textPrimary">
                                   &mdash;{" "}
@@ -110,7 +112,7 @@ function UserPhotos({ userId }) {
                                 </Typography>
                                 {` on ${formatDateTime(comment.date_time)}`}
                               </>
-                            }
+                            )}
                           />
                         </ListItem>
                         {index < photo.comments.length - 1 && <Divider />}
@@ -122,7 +124,6 @@ function UserPhotos({ userId }) {
                     </ListItem>
                   )}
                 </List>
-                {/* Add Comment Form */}
                 <AddComment photoId={photo._id} userId={userId} />
               </Box>
             </CardContent>

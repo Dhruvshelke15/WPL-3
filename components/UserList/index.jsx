@@ -11,7 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as api from "../../lib/api";
-import { useAppStore } from "../../lib/store";
+import useAppStore from "../../lib/store";
 
 import "./styles.css";
 

@@ -10,7 +10,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import * as api from "../../lib/api";
-import { useAppStore } from "../../lib/store";
+import useAppStore from "../../lib/store";
 
 function PhotoUpload() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -25,14 +25,14 @@ function PhotoUpload() {
   const uploadMutation = useMutation({
     mutationFn: api.uploadPhoto,
     onSuccess: () => {
-      alert("Photo uploaded successfully!");
+      console.log("Photo uploaded successfully!");
       // Invalidate user's photos query
       queryClient.invalidateQueries({ queryKey: ['photosOfUser', loggedInUser._id] });
       // Navigate to the user's photo page
       navigate(`/photos/${loggedInUser._id}`);
     },
     onError: (error) => {
-      alert(`Upload failed: ${error.response?.data || error.message}`);
+      console.error(`Upload failed: ${error.response?.data || error.message}`);
     },
   });
 
@@ -43,20 +43,15 @@ function PhotoUpload() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!selectedFile) {
-      alert("Please select a file to upload.");
+      console.error("Please select a file to upload.");
       return;
     }
 
     const formData = new FormData();
-    
-    // to pass the test, we must use a unique name here.
-    // for the test, we match its logic.
     const uniquePhotoName = "p" + String(new Date().valueOf()) + ".jpg";
 
-    // use the unique name for the test, but use the selected file's content
     formData.append('uploadedphoto', selectedFile, uniquePhotoName);
-
-
+    
     uploadMutation.mutate(formData);
   };
 

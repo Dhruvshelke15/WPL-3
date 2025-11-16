@@ -10,7 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import * as api from "../../lib/api";
-import { useAppStore } from "../../lib/store";
+import useAppStore from "../../lib/store";
 
 import "./styles.css";
 
@@ -35,7 +35,6 @@ function TopBar() {
       logout(); // clear user from Zustand store
     },
     onError: (error) => {
-      // Tmight fail if session is already expired, so we log out anyway
       console.error("Logout API call failed:", error);
       logout();
     }
@@ -50,13 +49,13 @@ function TopBar() {
 
         {loggedInUser && (
           <FormControlLabel
-            control={
+            control={(
               <Switch
                 checked={advancedFeatures}
                 onChange={handleFeatureToggle}
                 color="default"
               />
-            }
+            )}
             label="Advanced Features"
             style={{ marginRight: 16 }}
           />

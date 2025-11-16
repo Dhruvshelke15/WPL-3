@@ -13,7 +13,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "./styles/main.css";
 // Lib imports
-import { useAppStore } from "./lib/store";
+import useAppStore from "./lib/store";
 // Component imports
 import TopBar from "./components/TopBar";
 import UserDetail from "./components/UserDetail";
